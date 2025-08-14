@@ -5,16 +5,22 @@ const fs = require('fs');
 const nodemailer = require('nodemailer');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files (e.g., JS, CSS) from current folder
+app.use(express.static(__dirname));
+
+// Serve index.html for root route
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 const upload = multer({ dest: 'uploads/' });
 
-// -------------- Smart Tag Helpers ------------------
-
+// -------- Smart Tag Helpers ----------
 function getRandomPrice(min = 320.19, max = 890.99) {
   const price = (Math.random() * (max - min) + min).toFixed(2);
   return `$${price}`;
@@ -65,8 +71,7 @@ function fillTemplate(template, data) {
     .replace(/#address/g, getRandomAddress());
 }
 
-// ---------------------------------------------------
-
+// ------------- Email Send Route ---------------
 app.post('/sendEmails', upload.single('attachment'), async (req, res) => {
   try {
     const { emails, subject, body, smtpHost, smtpPort, smtpUser, smtpPass } = req.body;
@@ -77,6 +82,7 @@ app.post('/sendEmails', upload.single('attachment'), async (req, res) => {
     } catch {
       return res.status(400).json({ error: "Invalid emails format." });
     }
+
     if (!Array.isArray(emailList) || emailList.length === 0) {
       return res.status(400).json({ error: "No emails provided." });
     }
@@ -89,25 +95,20 @@ app.post('/sendEmails', upload.single('attachment'), async (req, res) => {
       return res.status(400).json({ error: "SMTP details are required." });
     }
 
-    // Setup nodemailer transporter
-    let transporter = nodemailer.createTransport({
+    const transporter = nodemailer.createTransport({
       host: smtpHost,
       port: Number(smtpPort),
-      secure: Number(smtpPort) === 465, // true for 465, false for other ports
+      secure: Number(smtpPort) === 465,
       auth: {
         user: smtpUser,
         pass: smtpPass,
       },
     });
 
-    // Single email (because frontend sends one by one)
     const emailData = emailList[0];
-
-    // Replace tags in body
     const finalBody = fillTemplate(body, emailData);
 
-    // Prepare mail options
-    let mailOptions = {
+    const mailOptions = {
       from: smtpUser,
       to: emailData.email,
       subject: subject,
@@ -121,10 +122,8 @@ app.post('/sendEmails', upload.single('attachment'), async (req, res) => {
       }];
     }
 
-    // Send mail
     await transporter.sendMail(mailOptions);
 
-    // Delete uploaded file after sending
     if (req.file) {
       fs.unlink(req.file.path, () => {});
     }
@@ -139,7 +138,6 @@ app.post('/sendEmails', upload.single('attachment'), async (req, res) => {
     return res.status(500).json({ error: "Failed to send email." });
   }
 });
-
 
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
