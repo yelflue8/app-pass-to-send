@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Email Campaign History</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f9f9f9;
+    }
+    h2 {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 900px;
+      margin: auto;
+      background: white;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px 12px;
+      text-align: center;
+      font-size: 14px;
+    }
+    th {
+      background-color: #007BFF;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f1f1f1;
+    }
+    button {
+      margin: 20px auto;
+      display: block;
+      padding: 10px 20px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #noHistory {
+      text-align: center;
+      font-size: 16px;
+      color: #555;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Email Campaign History</h2>
+
+  <table id="historyTable" hidden>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Date/Time</th>
+        <th>Subject</th>
+        <th>Sent</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div id="noHistory">No history found.</div>
+
+  <button onclick="window.close()">Close</button>
+
+  <script>
+    function loadHistory() {
+      const history = JSON.parse(localStorage.getItem('emailCampaignHistory') || '[]');
+      const table = document.getElementById('historyTable');
+      const tbody = table.querySelector('tbody');
+      const noHistory = document.getElementById('noHistory');
+
+      if (history.length === 0) {
+        table.hidden = true;
+        noHistory.style.display = 'block';
+        return;
+      }
+
+      noHistory.style.display = 'none';
+      table.hidden = false;
+      tbody.innerHTML = '';
+
+      history.forEach((entry, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${idx+1}</td>
+          <td>${new Date(entry.datetime).toLocaleString()}</td>
+          <td>${entry.subject || '-'}</td>
+          <td>${entry.emailsSent}</td>
+          <td>${entry.status}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    window.onload = loadHistory;
+  </script>
+</body>
+</html>
