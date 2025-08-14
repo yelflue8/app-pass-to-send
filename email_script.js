@@ -66,6 +66,7 @@ sendBtn.addEventListener("click", async () => {
   const baseFormData = new FormData();
   baseFormData.append("subject", subject);
   baseFormData.append("body", body);
+
   if (apiMode) {
     const apiToken = document.getElementById("apiToken").value.trim();
     if (!apiToken) {
@@ -121,7 +122,7 @@ sendBtn.addEventListener("click", async () => {
     }
 
     try {
-      const response = await fetch("http://localhost:3000/sendEmails", {
+      const response = await fetch("/sendEmails", {
         method: "POST",
         body: formData,
       });
